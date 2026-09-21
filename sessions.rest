@@ -1,0 +1,317 @@
+###############################################################################
+# CSE 341 — Sessions API tests (full CRUD)
+#
+# Sessions are the CHILD collection: each one references a game by `gameId`, so
+# most requests here depend on a game existing first. The first request below
+# fetches the seeded games so the rest can borrow a real id.
+#
+# Run `npm run seed -- --fresh` first, then send these IN ORDER, top to bottom.
+#
+# Only ONE @baseUrl may be active: if both are uncommented, the last one
+# silently wins.
+###############################################################################
+
+@baseUrl = http://localhost:8080
+# @baseUrl = https://REPLACE-ME.onrender.com
+
+@contentType = application/json
+
+### ---------------------------------------------------------------------------
+### Borrow a real game id for everything below
+### ---------------------------------------------------------------------------
+
+### Expect 200 and 7 seeded games
+# @name allGames
+GET {{baseUrl}}/games
+
+### ---------------------------------------------------------------------------
+### GET — read
+### ---------------------------------------------------------------------------
+
+### Every session, newest first — expect 200 and 10 seeded sessions
+# @name allSessions
+GET {{baseUrl}}/sessions
+
+### One session by id — expect 200
+GET {{baseUrl}}/sessions/{{allSessions.response.body.0._id}}
+
+### Filter to one game's sessions — this is the relationship between the two
+### collections. Expect 200 and only sessions whose gameId matches.
+GET {{baseUrl}}/sessions?gameId={{allGames.response.body.0._id}}
+
+### Malformed gameId filter — expect 400 rather than silently returning everything
+GET {{baseUrl}}/sessions?gameId=not-a-valid-object-id
+
+### Malformed session id — expect 400
+GET {{baseUrl}}/sessions/not-a-valid-object-id
+
+### Well-formed id that matches nothing — expect 404
+GET {{baseUrl}}/sessions/000000000000000000000000
+
+### ---------------------------------------------------------------------------
+### POST — create.  Expect 201, a Location header, and the new id in the body.
+### ---------------------------------------------------------------------------
+
+# @name createSession
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-17",
+  "players": ["Reese", "Sam", "Jordan"],
+  "winner": "Jordan",
+  "durationMinutes": 76,
+  "notes": "Jordan's first win."
+}
+
+### Confirm it landed — expect 200
+GET {{baseUrl}}/sessions/{{createSession.response.body.id}}
+
+### `notes` is the only optional field — expect 201, with no notes in the response
+# @name noNotes
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-16",
+  "players": ["Reese", "Sam"],
+  "winner": "Reese",
+  "durationMinutes": 61
+}
+
+### ---------------------------------------------------------------------------
+### POST — validation failures.  All 400.  Rubric criterion #2 needs POST *and*
+### PUT validation on *both* collections, so do not skip this section on camera.
+### ---------------------------------------------------------------------------
+
+### Empty body — expect 400 listing every missing required field
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{}
+
+### winner is not one of the players — expect 400 naming the valid players.
+### A cross-field rule, so it cannot be caught by looking at one field alone.
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-15",
+  "players": ["Reese", "Sam"],
+  "winner": "Somebody Else",
+  "durationMinutes": 45
+}
+
+### playedOn in the future — expect 400. A session records a game already played.
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2099-01-01",
+  "players": ["Reese", "Sam"],
+  "winner": "Sam",
+  "durationMinutes": 45
+}
+
+### A date that matches the pattern but is not real — expect 400.
+### JavaScript would roll 2026-02-31 over to March 3rd; the validator does not.
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-02-31",
+  "players": ["Reese", "Sam"],
+  "winner": "Sam",
+  "durationMinutes": 45
+}
+
+### Wrong date format — expect 400
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "09/15/2026",
+  "players": ["Reese", "Sam"],
+  "winner": "Sam",
+  "durationMinutes": 45
+}
+
+### Empty players array — expect 400, at least one player is required
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-15",
+  "players": [],
+  "winner": "Sam",
+  "durationMinutes": 45
+}
+
+### durationMinutes of zero — expect 400, the minimum is 1
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-15",
+  "players": ["Reese", "Sam"],
+  "winner": "Sam",
+  "durationMinutes": 0
+}
+
+### Malformed gameId — expect 400 ("must be a 24-character hex ObjectId")
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "not-a-valid-object-id",
+  "playedOn": "2026-09-15",
+  "players": ["Reese", "Sam"],
+  "winner": "Sam",
+  "durationMinutes": 45
+}
+
+### Well-formed gameId that refers to NO game — expect 400 ("No game exists with
+### id ..."). This is the cross-COLLECTION check: the API will not let you log a
+### session against a game that is not there.
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "000000000000000000000000",
+  "playedOn": "2026-09-15",
+  "players": ["Reese", "Sam"],
+  "winner": "Sam",
+  "durationMinutes": 45
+}
+
+### notes over the 500-character limit — expect 400
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-15",
+  "players": ["Reese", "Sam"],
+  "winner": "Sam",
+  "durationMinutes": 45,
+  "notes": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+
+### ---------------------------------------------------------------------------
+### PUT — replace.  Expect 204 No Content.
+### ---------------------------------------------------------------------------
+
+### Replace the session created above — expect 204
+PUT {{baseUrl}}/sessions/{{createSession.response.body.id}}
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-17",
+  "players": ["Reese", "Sam", "Jordan"],
+  "winner": "Reese",
+  "durationMinutes": 80,
+  "notes": "Corrected the winner — Reese had the higher score."
+}
+
+### Confirm the change landed — expect 200, winner is now Reese
+GET {{baseUrl}}/sessions/{{createSession.response.body.id}}
+
+### PUT replaces the WHOLE document, so omitting notes removes it.
+### Expect 204, then no notes field on the GET below.
+PUT {{baseUrl}}/sessions/{{createSession.response.body.id}}
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-17",
+  "players": ["Reese", "Sam", "Jordan"],
+  "winner": "Reese",
+  "durationMinutes": 80
+}
+
+### Confirm notes is gone — expect 200 with no "notes" field
+GET {{baseUrl}}/sessions/{{createSession.response.body.id}}
+
+### PUT with an incomplete body — expect 400
+PUT {{baseUrl}}/sessions/{{createSession.response.body.id}}
+Content-Type: {{contentType}}
+
+{
+  "winner": "Reese"
+}
+
+### PUT with winner not among players — expect 400 (same rule as POST)
+PUT {{baseUrl}}/sessions/{{createSession.response.body.id}}
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-17",
+  "players": ["Reese", "Sam"],
+  "winner": "Jordan",
+  "durationMinutes": 80
+}
+
+### PUT pointing at a game that does not exist — expect 400
+PUT {{baseUrl}}/sessions/{{createSession.response.body.id}}
+Content-Type: {{contentType}}
+
+{
+  "gameId": "000000000000000000000000",
+  "playedOn": "2026-09-17",
+  "players": ["Reese", "Sam"],
+  "winner": "Reese",
+  "durationMinutes": 80
+}
+
+### PUT to a well-formed but unknown session id — expect 404
+PUT {{baseUrl}}/sessions/000000000000000000000000
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-17",
+  "players": ["Reese", "Sam"],
+  "winner": "Reese",
+  "durationMinutes": 80
+}
+
+### PUT with a malformed session id — expect 400
+PUT {{baseUrl}}/sessions/not-a-valid-object-id
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-17",
+  "players": ["Reese", "Sam"],
+  "winner": "Reese",
+  "durationMinutes": 80
+}
+
+### ---------------------------------------------------------------------------
+### DELETE — remove.  Expect 204 the first time, 404 the second.
+### ---------------------------------------------------------------------------
+
+### Delete the session created above — expect 204
+DELETE {{baseUrl}}/sessions/{{createSession.response.body.id}}
+
+### Delete it again — expect 404
+DELETE {{baseUrl}}/sessions/{{createSession.response.body.id}}
+
+### Clean up the no-notes session — expect 204
+DELETE {{baseUrl}}/sessions/{{noNotes.response.body.id}}
+
+### Delete with a malformed id — expect 400
+DELETE {{baseUrl}}/sessions/not-a-valid-object-id
+
+### Deleting a session leaves its game alone — expect 200, the game is still there
+GET {{baseUrl}}/games/{{allGames.response.body.0._id}}

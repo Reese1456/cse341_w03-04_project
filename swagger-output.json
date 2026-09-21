@@ -1,0 +1,1074 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "CSE 341 Board Game Library API",
+    "version": "1.0.0",
+    "description": "A REST API for a board game collection and the play sessions logged against it, backed by MongoDB Atlas. Built for CSE 341 Web Services, project 2.\n\nTwo collections: **games** (nine fields) and **sessions** (six). A session references its game by `gameId`, so creating one requires a game that already exists, and deleting a game also deletes its sessions.\n\nEvery POST and PUT validates its whole body and answers `400` with an `errors` array listing every problem found, not just the first one."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This server (localhost or Render)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Root",
+      "description": "Welcome message and health check"
+    },
+    {
+      "name": "Games",
+      "description": "The board game collection — create, read, update, delete"
+    },
+    {
+      "name": "Sessions",
+      "description": "Play sessions logged against a game"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Root"
+        ],
+        "summary": "API welcome message",
+        "description": "Also doubles as the Render health check endpoint.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/swagger.json": {
+      "get": {
+        "tags": [
+          "Root"
+        ],
+        "summary": "The raw OpenAPI 3 document that powers /api-docs",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/games": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Get every game",
+        "description": "Returns every game in the collection, each with its MongoDB _id, sorted by title.",
+        "responses": {
+          "200": {
+            "description": "An array of games (empty if there are none)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GameWithId"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Create a new game",
+        "description": "All nine fields are required. maxPlayers must be greater than or equal to minPlayers, and any field not listed in the schema is ignored rather than stored.",
+        "responses": {
+          "201": {
+            "description": "Game created. The body includes the new id, and the Location header points to it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedGame"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A field is missing or badly formatted. errors lists every problem found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Game"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{id}": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Get one game by its MongoDB ObjectId",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The game's MongoDB ObjectId (24 hex characters)",
+            "example": "000000000000000000000000"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The matching game",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameWithId"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The id is not a valid ObjectId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game has that id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Replace an existing game",
+        "description": "Replaces the whole game, so send all nine fields. The same validation rules as POST apply.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The game's MongoDB ObjectId (24 hex characters)",
+            "example": "000000000000000000000000"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Game updated. There is no response body."
+          },
+          "400": {
+            "description": "The id is not a valid ObjectId, or a field is missing or badly formatted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game has that id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Game"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Delete a game and all of its play sessions",
+        "description": "Sessions reference a game by id, so deleting a game also deletes its sessions. Leaving them behind would orphan them, pointing at a game that no longer exists.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The game's MongoDB ObjectId (24 hex characters)",
+            "example": "000000000000000000000000"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Game deleted. There is no response body."
+          },
+          "400": {
+            "description": "The id is not a valid ObjectId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No game has that id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Get every play session, newest first",
+        "description": "Pass ?gameId= to return only the sessions for one game. This is how the two collections relate: a session stores the _id of the game it belongs to.",
+        "parameters": [
+          {
+            "name": "gameId",
+            "in": "query",
+            "required": false,
+            "description": "Optional filter: only sessions for this game",
+            "example": "000000000000000000000000",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An array of sessions (empty if there are none)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionWithId"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The gameId query parameter is not a valid ObjectId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Record a new play session",
+        "description": "gameId must be the _id of a game that already exists, playedOn cannot be in the future, and winner must be one of the names in players. notes is the only optional field.",
+        "responses": {
+          "201": {
+            "description": "Session created. The body includes the new id, and the Location header points to it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A field is missing or badly formatted, or gameId refers to no existing game. errors lists every problem found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Session"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Get one play session by its MongoDB ObjectId",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The session's MongoDB ObjectId (24 hex characters)",
+            "example": "000000000000000000000000"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The matching session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithId"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The id is not a valid ObjectId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No session has that id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Replace an existing play session",
+        "description": "Replaces the whole session, so send every required field. The same validation rules as POST apply, including the check that gameId refers to a real game.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The session's MongoDB ObjectId (24 hex characters)",
+            "example": "000000000000000000000000"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session updated. There is no response body."
+          },
+          "400": {
+            "description": "The id is not a valid ObjectId, a field is missing or badly formatted, or gameId refers to no existing game",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No session has that id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Session"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Delete a play session",
+        "description": "Deletes only this session. The game it referenced is left alone.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The session's MongoDB ObjectId (24 hex characters)",
+            "example": "000000000000000000000000"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session deleted. There is no response body."
+          },
+          "400": {
+            "description": "The id is not a valid ObjectId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No session has that id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Game": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "required": {
+            "type": "array",
+            "example": [
+              "title",
+              "publisher",
+              "yearPublished",
+              "minPlayers",
+              "maxPlayers",
+              "playTimeMinutes",
+              "complexity",
+              "categories",
+              "ownerEmail"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Wingspan"
+                  }
+                }
+              },
+              "publisher": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Stonemaier Games"
+                  }
+                }
+              },
+              "yearPublished": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "integer"
+                  },
+                  "example": {
+                    "type": "number",
+                    "example": 2019
+                  },
+                  "minimum": {
+                    "type": "number",
+                    "example": 1900
+                  }
+                }
+              },
+              "minPlayers": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "integer"
+                  },
+                  "example": {
+                    "type": "number",
+                    "example": 1
+                  },
+                  "minimum": {
+                    "type": "number",
+                    "example": 1
+                  }
+                }
+              },
+              "maxPlayers": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "integer"
+                  },
+                  "example": {
+                    "type": "number",
+                    "example": 5
+                  },
+                  "minimum": {
+                    "type": "number",
+                    "example": 1
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Must be greater than or equal to minPlayers."
+                  }
+                }
+              },
+              "playTimeMinutes": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "integer"
+                  },
+                  "example": {
+                    "type": "number",
+                    "example": 70
+                  },
+                  "minimum": {
+                    "type": "number",
+                    "example": 1
+                  }
+                }
+              },
+              "complexity": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "enum": {
+                    "type": "array",
+                    "example": [
+                      "light",
+                      "medium",
+                      "heavy"
+                    ],
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "medium"
+                  }
+                }
+              },
+              "categories": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "array"
+                  },
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "example": "string"
+                      }
+                    }
+                  },
+                  "minItems": {
+                    "type": "number",
+                    "example": 1
+                  },
+                  "example": {
+                    "type": "array",
+                    "example": [
+                      "strategy",
+                      "engine-building"
+                    ],
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "ownerEmail": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "format": {
+                    "type": "string",
+                    "example": "email"
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "reese@example.com"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "GameWithId": {
+        "type": "object",
+        "properties": {
+          "allOf": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Game"
+            }
+          }
+        }
+      },
+      "CreatedGame": {
+        "type": "object",
+        "properties": {
+          "allOf": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Game"
+            }
+          }
+        }
+      },
+      "Session": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "required": {
+            "type": "array",
+            "example": [
+              "gameId",
+              "playedOn",
+              "players",
+              "winner",
+              "durationMinutes"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "gameId": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "The _id of an existing game. A game with this id must already exist."
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "000000000000000000000000"
+                  }
+                }
+              },
+              "playedOn": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "format": {
+                    "type": "string",
+                    "example": "date"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "YYYY-MM-DD. Cannot be in the future."
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "2026-09-19"
+                  }
+                }
+              },
+              "players": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "array"
+                  },
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "example": "string"
+                      }
+                    }
+                  },
+                  "minItems": {
+                    "type": "number",
+                    "example": 1
+                  },
+                  "example": {
+                    "type": "array",
+                    "example": [
+                      "Reese",
+                      "Sam",
+                      "Jordan"
+                    ],
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "winner": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Must be one of the names in players."
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Sam"
+                  }
+                }
+              },
+              "durationMinutes": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "integer"
+                  },
+                  "example": {
+                    "type": "number",
+                    "example": 82
+                  },
+                  "minimum": {
+                    "type": "number",
+                    "example": 1
+                  }
+                }
+              },
+              "notes": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "maxLength": {
+                    "type": "number",
+                    "example": 500
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Optional. The only field that may be omitted."
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Close game, decided on the last round."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "SessionWithId": {
+        "type": "object",
+        "properties": {
+          "allOf": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Session"
+            }
+          }
+        }
+      },
+      "CreatedSession": {
+        "type": "object",
+        "properties": {
+          "allOf": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Session"
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "object"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "A short summary of what went wrong."
+                  },
+                  "example": {
+                    "type": "string",
+                    "example": "Invalid game."
+                  }
+                }
+              },
+              "errors": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "array"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Present on validation failures only: one entry per problem found in the body."
+                  },
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "example": "string"
+                      }
+                    }
+                  },
+                  "example": {
+                    "type": "array",
+                    "example": [
+                      "\"title\" is required and must be a non-empty string.",
+                      "\"maxPlayers\" must be greater than or equal to \"minPlayers\"."
+                    ],
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

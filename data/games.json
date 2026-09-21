@@ -1,0 +1,79 @@
+[
+  {
+    "title": "Wingspan",
+    "publisher": "Stonemaier Games",
+    "yearPublished": 2019,
+    "minPlayers": 1,
+    "maxPlayers": 5,
+    "playTimeMinutes": 70,
+    "complexity": "medium",
+    "categories": ["strategy", "engine-building", "card-drafting"],
+    "ownerEmail": "reese@example.com"
+  },
+  {
+    "title": "Catan",
+    "publisher": "Kosmos",
+    "yearPublished": 1995,
+    "minPlayers": 3,
+    "maxPlayers": 4,
+    "playTimeMinutes": 90,
+    "complexity": "light",
+    "categories": ["strategy", "trading", "dice-rolling"],
+    "ownerEmail": "reese@example.com"
+  },
+  {
+    "title": "Gloomhaven",
+    "publisher": "Cephalofair Games",
+    "yearPublished": 2017,
+    "minPlayers": 1,
+    "maxPlayers": 4,
+    "playTimeMinutes": 120,
+    "complexity": "heavy",
+    "categories": ["campaign", "dungeon-crawl", "cooperative"],
+    "ownerEmail": "sam@example.com"
+  },
+  {
+    "title": "Azul",
+    "publisher": "Next Move Games",
+    "yearPublished": 2017,
+    "minPlayers": 2,
+    "maxPlayers": 4,
+    "playTimeMinutes": 45,
+    "complexity": "light",
+    "categories": ["abstract", "tile-placement", "pattern-building"],
+    "ownerEmail": "reese@example.com"
+  },
+  {
+    "title": "Terraforming Mars",
+    "publisher": "FryxGames",
+    "yearPublished": 2016,
+    "minPlayers": 1,
+    "maxPlayers": 5,
+    "playTimeMinutes": 120,
+    "complexity": "heavy",
+    "categories": ["strategy", "engine-building", "card-drafting"],
+    "ownerEmail": "sam@example.com"
+  },
+  {
+    "title": "Codenames",
+    "publisher": "Czech Games Edition",
+    "yearPublished": 2015,
+    "minPlayers": 2,
+    "maxPlayers": 8,
+    "playTimeMinutes": 15,
+    "complexity": "light",
+    "categories": ["party", "word-game", "team-based"],
+    "ownerEmail": "reese@example.com"
+  },
+  {
+    "title": "Pandemic",
+    "publisher": "Z-Man Games",
+    "yearPublished": 2008,
+    "minPlayers": 2,
+    "maxPlayers": 4,
+    "playTimeMinutes": 45,
+    "complexity": "medium",
+    "categories": ["cooperative", "hand-management", "set-collection"],
+    "ownerEmail": "reese@example.com"
+  }
+]

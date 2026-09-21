@@ -1,0 +1,329 @@
+###############################################################################
+# CSE 341 — Games API tests (full CRUD)
+#
+# Click the "Send Request" link above any request below. Requires the VS Code
+# REST Client extension.
+#
+# Only ONE @baseUrl may be active: if both are uncommented, the last one
+# silently wins. Swap them to test the deployed API instead of localhost.
+#
+# Requests marked `# @name something` save their response, so later requests can
+# refer to it as {{something.response.body.field}}. That means the create ->
+# read -> update -> delete cycle runs end to end without pasting an ObjectId by
+# hand — but you must send them IN ORDER, top to bottom.
+#
+# This file is also the video script: every request below states the status code
+# it should return, so you can read straight down it on camera.
+###############################################################################
+
+@baseUrl = http://localhost:8080
+# @baseUrl = https://REPLACE-ME.onrender.com
+
+@contentType = application/json
+
+### ---------------------------------------------------------------------------
+### GET — read.  Run `npm run seed -- --fresh` first for a known starting state.
+### ---------------------------------------------------------------------------
+
+### Every game — expect 200 and an array of 7 seeded games
+# @name allGames
+GET {{baseUrl}}/games
+
+### One game by id, using the first from the list above — expect 200
+GET {{baseUrl}}/games/{{allGames.response.body.0._id}}
+
+### Malformed id gets a helpful 400, not a 500
+GET {{baseUrl}}/games/not-a-valid-object-id
+
+### Well-formed id that matches nothing — expect 404
+GET {{baseUrl}}/games/000000000000000000000000
+
+### ---------------------------------------------------------------------------
+### POST — create.  Expect 201, a Location header, and the new id in the body.
+### ---------------------------------------------------------------------------
+
+# @name createGame
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{
+  "title": "Brass: Birmingham",
+  "publisher": "Roxley Games",
+  "yearPublished": 2018,
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "playTimeMinutes": 120,
+  "complexity": "heavy",
+  "categories": ["strategy", "economic", "network-building"],
+  "ownerEmail": "reese@example.com"
+}
+
+### Confirm it landed — expect 200 and the game just created
+GET {{baseUrl}}/games/{{createGame.response.body.id}}
+
+### ---------------------------------------------------------------------------
+### POST — validation failures.  Every one of these should be a 400 whose
+### `errors` array names the exact problem.  This is rubric criterion #2.
+### ---------------------------------------------------------------------------
+
+### Empty body — expect 400 listing all NINE missing fields at once
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{}
+
+### maxPlayers below minPlayers — expect 400 (a cross-field rule)
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{
+  "title": "Impossible Player Count",
+  "publisher": "Test Press",
+  "yearPublished": 2020,
+  "minPlayers": 5,
+  "maxPlayers": 2,
+  "playTimeMinutes": 60,
+  "complexity": "medium",
+  "categories": ["test"],
+  "ownerEmail": "reese@example.com"
+}
+
+### complexity outside the allowed set — expect 400 naming the three valid values
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{
+  "title": "Bad Complexity",
+  "publisher": "Test Press",
+  "yearPublished": 2020,
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "playTimeMinutes": 60,
+  "complexity": "extreme",
+  "categories": ["test"],
+  "ownerEmail": "reese@example.com"
+}
+
+### Empty categories array — expect 400, at least one is required
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{
+  "title": "No Categories",
+  "publisher": "Test Press",
+  "yearPublished": 2020,
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "playTimeMinutes": 60,
+  "complexity": "light",
+  "categories": [],
+  "ownerEmail": "reese@example.com"
+}
+
+### A number sent as a string — expect 400. The API does not silently coerce.
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{
+  "title": "Stringly Typed",
+  "publisher": "Test Press",
+  "yearPublished": 2020,
+  "minPlayers": "2",
+  "maxPlayers": 4,
+  "playTimeMinutes": 60,
+  "complexity": "light",
+  "categories": ["test"],
+  "ownerEmail": "reese@example.com"
+}
+
+### Bad email and an impossible year — expect 400 listing BOTH problems
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{
+  "title": "Two Problems",
+  "publisher": "Test Press",
+  "yearPublished": 3000,
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "playTimeMinutes": 60,
+  "complexity": "light",
+  "categories": ["test"],
+  "ownerEmail": "not-an-email"
+}
+
+### Blank strings do not count as present — expect 400
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{
+  "title": "   ",
+  "publisher": "   ",
+  "yearPublished": 2020,
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "playTimeMinutes": 60,
+  "complexity": "light",
+  "categories": ["test"],
+  "ownerEmail": "reese@example.com"
+}
+
+### Extra fields are dropped, not stored — expect 201 with no "isAdmin" in the
+### response, and none in the database either
+# @name smuggle
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{
+  "title": "Extra Fields",
+  "publisher": "Test Press",
+  "yearPublished": 2020,
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "playTimeMinutes": 60,
+  "complexity": "light",
+  "categories": ["test"],
+  "ownerEmail": "reese@example.com",
+  "isAdmin": true,
+  "role": "superuser"
+}
+
+### Confirm "isAdmin" was never stored — expect 200 without it
+GET {{baseUrl}}/games/{{smuggle.response.body.id}}
+
+### ---------------------------------------------------------------------------
+### PUT — replace.  Expect 204 No Content (an empty response body is correct).
+### ---------------------------------------------------------------------------
+
+### Replace the game created above — expect 204
+PUT {{baseUrl}}/games/{{createGame.response.body.id}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Brass: Birmingham (Deluxe)",
+  "publisher": "Roxley Games",
+  "yearPublished": 2018,
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "playTimeMinutes": 150,
+  "complexity": "heavy",
+  "categories": ["strategy", "economic", "network-building", "deluxe"],
+  "ownerEmail": "reese@example.com"
+}
+
+### Confirm the change landed — expect 200 with the new title and 150 minutes
+GET {{baseUrl}}/games/{{createGame.response.body.id}}
+
+### PUT with an incomplete body — expect 400. PUT replaces the whole document,
+### so it needs every field, exactly like POST.
+PUT {{baseUrl}}/games/{{createGame.response.body.id}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Only A Title"
+}
+
+### PUT to a well-formed but unknown id — expect 404
+PUT {{baseUrl}}/games/000000000000000000000000
+Content-Type: {{contentType}}
+
+{
+  "title": "Nobody Home",
+  "publisher": "Test Press",
+  "yearPublished": 2020,
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "playTimeMinutes": 60,
+  "complexity": "light",
+  "categories": ["test"],
+  "ownerEmail": "reese@example.com"
+}
+
+### PUT with a malformed id — expect 400
+PUT {{baseUrl}}/games/not-a-valid-object-id
+Content-Type: {{contentType}}
+
+{
+  "title": "Nobody Home",
+  "publisher": "Test Press",
+  "yearPublished": 2020,
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "playTimeMinutes": 60,
+  "complexity": "light",
+  "categories": ["test"],
+  "ownerEmail": "reese@example.com"
+}
+
+### ---------------------------------------------------------------------------
+### DELETE — remove.  Expect 204 the first time, 404 the second.
+### ---------------------------------------------------------------------------
+
+### Delete the game created above — expect 204
+DELETE {{baseUrl}}/games/{{createGame.response.body.id}}
+
+### Delete it again — expect 404, it is already gone
+DELETE {{baseUrl}}/games/{{createGame.response.body.id}}
+
+### Clean up the "Extra Fields" game too — expect 204
+DELETE {{baseUrl}}/games/{{smuggle.response.body.id}}
+
+### Delete with a malformed id — expect 400
+DELETE {{baseUrl}}/games/not-a-valid-object-id
+
+### ---------------------------------------------------------------------------
+### Cascade — deleting a game must take its sessions with it, or they would be
+### left pointing at a game that no longer exists.
+### ---------------------------------------------------------------------------
+
+### Create a game to delete — expect 201
+# @name doomed
+POST {{baseUrl}}/games
+Content-Type: {{contentType}}
+
+{
+  "title": "Cascade Demo",
+  "publisher": "Test Press",
+  "yearPublished": 2021,
+  "minPlayers": 2,
+  "maxPlayers": 6,
+  "playTimeMinutes": 30,
+  "complexity": "light",
+  "categories": ["test"],
+  "ownerEmail": "reese@example.com"
+}
+
+### Attach a session to it — expect 201
+POST {{baseUrl}}/sessions
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{doomed.response.body.id}}",
+  "playedOn": "2026-09-15",
+  "players": ["Reese", "Sam"],
+  "winner": "Sam",
+  "durationMinutes": 28,
+  "notes": "This session should disappear with its game."
+}
+
+### It is there — expect 200 with one session
+GET {{baseUrl}}/sessions?gameId={{doomed.response.body.id}}
+
+### Delete the game — expect 204
+DELETE {{baseUrl}}/games/{{doomed.response.body.id}}
+
+### Its session is gone too — expect 200 with an EMPTY array
+GET {{baseUrl}}/sessions?gameId={{doomed.response.body.id}}
+
+### ---------------------------------------------------------------------------
+### Other endpoints
+### ---------------------------------------------------------------------------
+
+### Welcome message / health check — expect 200
+GET {{baseUrl}}/
+
+### The raw OpenAPI document — expect 200 and JSON
+GET {{baseUrl}}/swagger.json
+
+### An unknown path returns JSON, not an HTML error page — expect 404
+GET {{baseUrl}}/this-route-does-not-exist

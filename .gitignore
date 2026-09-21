@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment variables — never commit connection strings or secrets
+.env
+.env.local
+
+# Personal course notes (not part of the assignment submission)
+LEARNING.md
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db

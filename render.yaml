@@ -1,0 +1,47 @@
+# Render Blueprint. Optional — you can configure all of this by hand in the
+# Render dashboard instead — but keeping it in the repo means the deployment
+# settings are version-controlled alongside the code they describe.
+#
+# In Render: New > Blueprint, point it at this repository, then fill in the
+# secret values it prompts for (see `sync: false` below).
+services:
+  - type: web
+    name: cse341-boardgames-api
+    runtime: node
+    plan: free
+    branch: main
+
+    buildCommand: npm ci
+    startCommand: npm start
+
+    # Render pings this path to decide whether the service came up healthy.
+    healthCheckPath: /
+
+    envVars:
+      # `sync: false` means "do not store this value in the repo — prompt me for
+      # it in the dashboard". Connection strings and secrets must never be
+      # committed, so every sensitive value uses it.
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_USERNAME
+        sync: false
+      - key: MONGODB_PASSWORD
+        sync: false
+      - key: MONGODB_DB_NAME
+        sync: false
+
+      # Week 04 (OAuth). GITHUB_CALLBACK_URL must exactly match the callback
+      # registered in the *production* GitHub OAuth app, i.e.
+      # https://<this-service>.onrender.com/auth/github/callback
+      - key: SESSION_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CALLBACK_URL
+        sync: false
+
+    # NOTE: do NOT set PORT here. Render assigns a port at runtime and injects it
+    # as process.env.PORT; server.js already reads that and only falls back to
+    # 8080 locally. Hard-coding PORT would make the health check fail.

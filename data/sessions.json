@@ -1,0 +1,79 @@
+[
+  {
+    "gameTitle": "Wingspan",
+    "playedOn": "2026-09-19",
+    "players": ["Reese", "Sam", "Jordan"],
+    "winner": "Sam",
+    "durationMinutes": 82,
+    "notes": "Sam's wetland engine ran away with it on the last round."
+  },
+  {
+    "gameTitle": "Wingspan",
+    "playedOn": "2026-09-05",
+    "players": ["Reese", "Sam"],
+    "winner": "Reese",
+    "durationMinutes": 64
+  },
+  {
+    "gameTitle": "Catan",
+    "playedOn": "2026-09-13",
+    "players": ["Reese", "Sam", "Jordan", "Alex"],
+    "winner": "Jordan",
+    "durationMinutes": 105,
+    "notes": "Longest road flipped twice in the final three turns."
+  },
+  {
+    "gameTitle": "Catan",
+    "playedOn": "2026-08-22",
+    "players": ["Sam", "Jordan", "Alex"],
+    "winner": "Alex",
+    "durationMinutes": 88
+  },
+  {
+    "gameTitle": "Gloomhaven",
+    "playedOn": "2026-09-12",
+    "players": ["Reese", "Sam"],
+    "winner": "Reese",
+    "durationMinutes": 145,
+    "notes": "Scenario 4. Nearly exhausted both characters."
+  },
+  {
+    "gameTitle": "Azul",
+    "playedOn": "2026-09-20",
+    "players": ["Reese", "Jordan"],
+    "winner": "Jordan",
+    "durationMinutes": 38,
+    "notes": "Taught Jordan the rules; they won anyway."
+  },
+  {
+    "gameTitle": "Azul",
+    "playedOn": "2026-09-06",
+    "players": ["Reese", "Sam", "Alex"],
+    "winner": "Reese",
+    "durationMinutes": 52
+  },
+  {
+    "gameTitle": "Terraforming Mars",
+    "playedOn": "2026-08-30",
+    "players": ["Sam", "Alex"],
+    "winner": "Sam",
+    "durationMinutes": 168,
+    "notes": "Corporate Era. Ran long because of the rules lookups."
+  },
+  {
+    "gameTitle": "Codenames",
+    "playedOn": "2026-09-18",
+    "players": ["Reese", "Sam", "Jordan", "Alex", "Casey"],
+    "winner": "Casey",
+    "durationMinutes": 22,
+    "notes": "Two rounds back to back."
+  },
+  {
+    "gameTitle": "Pandemic",
+    "playedOn": "2026-09-14",
+    "players": ["Reese", "Sam", "Jordan"],
+    "winner": "Reese",
+    "durationMinutes": 51,
+    "notes": "Cooperative, so the winner is whoever cured the last disease."
+  }
+]
