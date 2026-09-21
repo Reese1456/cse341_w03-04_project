@@ -1,0 +1,7 @@
+# Store every text file with LF endings and check it out that way too.
+#
+# Without this, Git on Windows (core.autocrlf=true) converts files to CRLF on
+# checkout, while .prettierrc.json sets "endOfLine": "lf" — so a fresh clone
+# would fail `npm run format:check` on every single file, for a reason that has
+# nothing to do with the code.
+* text=auto eol=lf
