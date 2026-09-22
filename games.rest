@@ -16,8 +16,8 @@
 # it should return, so you can read straight down it on camera.
 ###############################################################################
 
-@baseUrl = http://localhost:8080
-# @baseUrl = https://REPLACE-ME.onrender.com
+# @baseUrl = http://localhost:8080
+@baseUrl = https://cse341-w03-04-project.onrender.com
 
 @contentType = application/json
 
