@@ -297,6 +297,21 @@ Content-Type: {{contentType}}
   "durationMinutes": 80
 }
 
+### VIDEO — PUT body validation with NO setup required.
+### The requests above need `createSession` to have been sent first; this one only
+### needs `allGames` and `allSessions` at the top of the file. Expect 400, with
+### the seeded session left untouched because validation runs before any write.
+PUT {{baseUrl}}/sessions/{{allSessions.response.body.0._id}}
+Content-Type: {{contentType}}
+
+{
+  "gameId": "{{allGames.response.body.0._id}}",
+  "playedOn": "2026-09-17",
+  "players": ["Reese", "Sam"],
+  "winner": "Nobody",
+  "durationMinutes": 80
+}
+
 ### ---------------------------------------------------------------------------
 ### DELETE — remove.  Expect 204 the first time, 404 the second.
 ### ---------------------------------------------------------------------------

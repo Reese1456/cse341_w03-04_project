@@ -255,6 +255,18 @@ Content-Type: {{contentType}}
   "ownerEmail": "reese@example.com"
 }
 
+### VIDEO — PUT body validation with NO setup required.
+### The requests above need `createGame` to have been sent first; this one only
+### needs `allGames` at the top of the file, so it works on camera without a
+### create step. Expect 400 — and because validation runs before any database
+### write, the seeded game is left completely untouched.
+PUT {{baseUrl}}/games/{{allGames.response.body.0._id}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Incomplete On Purpose"
+}
+
 ### ---------------------------------------------------------------------------
 ### DELETE — remove.  Expect 204 the first time, 404 the second.
 ### ---------------------------------------------------------------------------
